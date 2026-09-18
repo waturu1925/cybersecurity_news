@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}{{ ch.title }}ランキング — SEC//INTEL{% endblock %}
+{% block content %}
+<section class="page-head">
+  <p class="prompt"><span class="p-user">root@secintel</span>:<span class="p-path">~/{{ channel }}</span>$ ./rank --period={{ days }}d --top={{ items|length }}<span class="cursor"></span></p>
+  <h1 class="page-title"><span class="pt-code">{{ ch.code }}</span>{{ ch.title }} ランキング</h1>
+  <p class="page-desc">{{ ch.description }}</p>
+</section>
+
+<section class="toolbar">
+  <nav class="tabs" aria-label="期間">
+    {% for d, label in ch.periods.items() %}
+    <a class="tab {% if d == days %}active{% endif %}" href="{{ d }}d.html">{{ label }}</a>
+    {% endfor %}
+  </nav>
+  <p class="updated">
+    {% if last_collected %}最終収集: {{ last_collected|jst }}（<time class="ago" datetime="{{ last_collected.isoformat() }}">{{ last_collected|ago }}</time>）{% endif %}
+  </p>
+</section>
+
+{% if items %}
+<div class="level-summary">
+  {% for _, label, css in ch.levels %}
+  <span class="chip {{ css }}">{{ label }} <b>{{ counts[css] }}</b></span>
+  {% endfor %}
+  <span class="hint">全 {{ total }} 件中 上位 {{ items|length }} 件を表示 ・ タップで詳細</span>
+</div>
+
+<ol class="ranking">
+  {% for item in items %}
+  <li>
+    <a class="row lvl-{{ item.level_class }}" href="{{ root }}items/{{ item.id }}.html">
+      <div class="rank"><span class="hash">#</span>{{ '%02d' % loop.index }}</div>
+      <div class="row-body">
+        <div class="tags">
+          <span class="badge {{ item.level_class }}">{{ item.level }}</span>
+          <span class="category">{{ item.category }}</span>
+          {% if item.kind == 'kev' %}<span class="category kev">悪用確認済み</span>{% endif %}
+        </div>
+        <h2 class="row-title">{{ item.title_ja or item.title_orig }}</h2>
+        {% if item.summary_ja %}<p class="row-summary">{{ item.summary_ja }}</p>{% endif %}
+        <div class="meta"><span class="meta-src">&gt; {{ item.source }}</span> ・ <time class="ago" datetime="{{ item.published.isoformat() }}">{{ item.published|ago }}</time></div>
+      </div>
+      <div class="score">
+        <span class="score-label">{{ ch.score_label }}</span>
+        <span class="score-num">{{ item.score }}</span>
+        <span class="bar"><i style="width: {{ item.score }}%"></i></span>
+      </div>
+    </a>
+  </li>
+  {% endfor %}
+</ol>
+{% else %}
+<div class="empty window">
+  <div class="window-body">
+    <p>&gt; この期間の情報がありません。期間を広げるか、次回の自動更新をお待ちください。</p>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

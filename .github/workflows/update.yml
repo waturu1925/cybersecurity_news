@@ -1,0 +1,87 @@
+name: update
+
+on:
+  schedule:
+    - cron: "0 */3 * * *"   # 3時間ごとに収集してサイトを更新
+    - cron: "0 23 * * *"    # 毎朝 8:00（日本時間）に更新＋LINE 通知
+  workflow_dispatch:
+    inputs:
+      notify:
+        description: "LINE にも通知を送る"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      # 翻訳済みデータを実行間で引き継ぐ（無い場合は全件を取り直す）
+      - name: Restore database
+        uses: actions/cache/restore@v4
+        with:
+          path: data/news.db
+          key: newsdb-${{ github.run_id }}
+          restore-keys: newsdb-
+
+      - id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Collect and build
+        env:
+          CONNPASS_API_KEY: ${{ secrets.CONNPASS_API_KEY }}
+        run: python build.py
+
+      - name: Save database
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data/news.db
+          key: newsdb-${{ github.run_id }}
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Notify LINE
+        if: github.event.schedule == '0 23 * * *' || inputs.notify
+        env:
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+          SITE_URL: ${{ steps.pages.outputs.base_url }}
+        run: python notify_line.py
+
+      # 公開リポジトリは60日間更新が無いと定期実行が止まるため、毎月1日に空コミットして防ぐ
+      - name: Keep schedule alive
+        if: github.event.schedule == '0 23 * * *'
+        run: |
+          if [ "$(TZ=Asia/Tokyo date +%d)" = "01" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit --allow-empty -m "keepalive"
+            git push
+          fi

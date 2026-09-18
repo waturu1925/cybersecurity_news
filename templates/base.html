@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}SEC//INTEL{% endblock %}</title>
+  <meta name="theme-color" content="#030806">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SEC//INTEL">
+  <link rel="manifest" href="{{ root }}static/manifest.webmanifest">
+  <link rel="icon" href="{{ root }}static/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="{{ root }}static/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=M+PLUS+1+Code:wght@400;600;700&family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ root }}static/style.css">
+</head>
+<body class="theme-{{ theme }}">
+  <div class="fx-grid" aria-hidden="true"></div>
+  {% block background %}{% endblock %}
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <button class="menu-btn" id="menu-btn" type="button" aria-label="メニューを開く" aria-controls="drawer" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <a class="brand" href="{{ root }}index.html">
+        <span class="brand-mark">&gt;_</span>
+        <span class="brand-title">SEC<span class="slash">//</span>INTEL</span>
+      </a>
+      <div class="header-status">
+        <span class="led"></span><span class="led-text">更新 <time class="ago" datetime="{{ built_at.isoformat() }}">{{ built_at|ago }}</time></span>
+      </div>
+    </div>
+  </header>
+
+  <div class="drawer-backdrop" id="drawer-backdrop" hidden></div>
+  <nav class="drawer" id="drawer" aria-label="メインメニュー" aria-hidden="true">
+    <div class="drawer-head">
+      <span class="prompt-mini">root@secintel:~$ ls ./pages</span>
+      <button class="drawer-close" id="drawer-close" type="button" aria-label="メニューを閉じる">✕</button>
+    </div>
+    <ul class="drawer-links">
+      <li>
+        <a class="ch-home {% if active == 'home' %}active{% endif %}" href="{{ root }}index.html">
+          <span class="dl-index">[~]</span>
+          <span class="dl-body"><span class="dl-title">ホーム</span><span class="dl-sub">DASHBOARD</span></span>
+        </a>
+      </li>
+      {% for name, c in channels.items() %}
+      <li>
+        <a class="ch-{{ name }} {% if active == name %}active{% endif %}" href="{{ root }}{{ name }}/index.html">
+          <span class="dl-index">[0{{ loop.index }}]</span>
+          <span class="dl-body"><span class="dl-title">{{ c.title }} ランキング</span><span class="dl-sub">{{ c.code }}</span></span>
+        </a>
+      </li>
+      {% endfor %}
+      <li>
+        <a class="ch-events {% if active == 'events' %}active{% endif %}" href="{{ root }}events/index.html">
+          <span class="dl-index">[0{{ channels|length + 1 }}]</span>
+          <span class="dl-body"><span class="dl-title">イベント情報</span><span class="dl-sub">EVENT_CALENDAR</span></span>
+        </a>
+      </li>
+    </ul>
+    <div class="drawer-foot">
+      <p class="drawer-note">&gt; 最終収集: {% if last_collected %}{{ last_collected|jst }}{% else %}未実行{% endif %}</p>
+      <p class="drawer-note">&gt; {{ update_interval }}に自動更新されます</p>
+      {% if update_url %}
+      <a class="btn btn-block btn-ghost" href="{{ update_url }}" target="_blank" rel="noopener noreferrer">今すぐ更新する（GitHub）↗</a>
+      {% endif %}
+    </div>
+  </nav>
+
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <span>SEC//INTEL — 個人用セキュリティ情報収集ターミナル</span>
+      <span class="cursor-line">session active<span class="cursor"></span></span>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      const btn = document.getElementById("menu-btn");
+      const drawer = document.getElementById("drawer");
+      const backdrop = document.getElementById("drawer-backdrop");
+      const setOpen = (open) => {
+        document.body.classList.toggle("drawer-open", open);
+        btn.setAttribute("aria-expanded", String(open));
+        drawer.setAttribute("aria-hidden", String(!open));
+        backdrop.hidden = !open;
+      };
+      btn.addEventListener("click", () => setOpen(!document.body.classList.contains("drawer-open")));
+      backdrop.addEventListener("click", () => setOpen(false));
+      document.getElementById("drawer-close").addEventListener("click", () => setOpen(false));
+      document.addEventListener("keydown", (e) => { if (e.key === "Escape") setOpen(false); });
+
+      // ページは数時間ごとに生成されるため、「◯時間前」は閲覧時点の時刻で計算し直す
+      const ago = (iso) => {
+        const min = Math.max(1, Math.floor((Date.now() - new Date(iso)) / 60000));
+        if (min < 60) return `${min}分前`;
+        if (min < 1440) return `${Math.floor(min / 60)}時間前`;
+        return `${Math.floor(min / 1440)}日前`;
+      };
+      document.querySelectorAll("time.ago").forEach((t) => { t.textContent = ago(t.getAttribute("datetime")); });
+    })();
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

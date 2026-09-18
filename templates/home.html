@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}SEC//INTEL — ホーム{% endblock %}
+{% block background %}<canvas class="matrix" id="matrix" aria-hidden="true"></canvas>{% endblock %}
+{% block content %}
+<section class="hero">
+  <p class="prompt"><span class="p-user">root@secintel</span>:<span class="p-path">~</span>$ <span id="typed" data-text="./secintel --connect --lang=ja"></span><span class="cursor"></span></p>
+  <h1 class="glitch" data-text="SEC//INTEL">SEC//INTEL</h1>
+  <p class="hero-sub">世界のサイバーセキュリティ・技術・ガジェット情報を収集・翻訳・ランキングする個人用ターミナル</p>
+  <div class="hero-actions">
+    {% for name, c in channels.items() %}
+    <a class="btn ch-{{ name }}" href="{{ root }}{{ name }}/index.html">&gt; {{ c.title }}</a>
+    {% endfor %}
+    <a class="btn ch-events" href="{{ root }}events/index.html">&gt; イベント情報</a>
+  </div>
+</section>
+
+<section class="stats">
+  <div class="stat">
+    <span class="stat-label">監視中の記事</span>
+    <span class="stat-value">{{ stats.tracked }}</span>
+    <span class="stat-foot">件</span>
+  </div>
+  <div class="stat stat-critical">
+    <span class="stat-label">緊急レベルのニュース</span>
+    <span class="stat-value">{{ stats.critical }}</span>
+    <span class="stat-foot">件（直近1週間）</span>
+  </div>
+  <div class="stat stat-kev">
+    <span class="stat-label">悪用確認済みの脆弱性</span>
+    <span class="stat-value">{{ stats.kev_week }}</span>
+    <span class="stat-foot">件（CISA KEV・1週間）</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">情報源</span>
+    <span class="stat-value">{{ stats.sources }}</span>
+    <span class="stat-foot">{% if last_collected %}最終収集 <time class="ago" datetime="{{ last_collected.isoformat() }}">{{ last_collected|ago }}</time>{% else %}未収集{% endif %}</span>
+  </div>
+</section>
+
+<section class="channel-grid">
+  {% for name, c in channels.items() %}
+  {% set s = summaries[name] %}
+  <article class="window channel-card ch-{{ name }}">
+    <div class="window-bar">
+      <span class="dots"><i></i><i></i><i></i></span>
+      <span class="window-title">{{ c.code|lower }}.log</span>
+    </div>
+    <div class="window-body">
+      <div class="cc-head">
+        <span class="cc-index">[0{{ loop.index }}]</span>
+        <h2>{{ c.title }}</h2>
+      </div>
+      <p class="cc-desc">{{ c.description }}</p>
+      <div class="level-summary">
+        {% for _, label, css in c.levels %}
+        <span class="chip {{ css }}">{{ label }} <b>{{ s.counts[css] }}</b></span>
+        {% endfor %}
+      </div>
+      <p class="chip-note">{{ c.periods[c.default_period] }}・全{{ s.total }}件</p>
+      {% if s.top %}
+      <ol class="mini-rank">
+        {% for item in s.top %}
+        <li>
+          <a href="{{ root }}items/{{ item.id }}.html">
+            <span class="mr-rank">#{{ '%02d' % loop.index }}</span>
+            <span class="mr-title">{{ item.title_ja or item.title_orig }}</span>
+            <span class="mr-score {{ item.level_class }}">{{ item.score }}</span>
+          </a>
+        </li>
+        {% endfor %}
+      </ol>
+      {% else %}
+      <p class="muted">データ収集待ちです…</p>
+      {% endif %}
+      <a class="btn btn-block" href="{{ root }}{{ name }}/index.html">&gt; ランキングを開く</a>
+    </div>
+  </article>
+  {% endfor %}
+</section>
+
+<section class="window events-teaser ch-events">
+  <div class="window-bar">
+    <span class="dots"><i></i><i></i><i></i></span>
+    <span class="window-title">event_calendar.log — 開催予定のイベント</span>
+  </div>
+  <div class="window-body teaser-grid">
+    <div>
+      <h3 class="teaser-head">愛知・東海エリア</h3>
+      {% for e in events.nearby[:3] %}
+      <a class="teaser-line" href="{{ e.url }}" target="_blank" rel="noopener noreferrer">
+        <span class="t-date">{{ e.date_label }}</span><span class="t-name">{{ e.name }}</span>
+      </a>
+      {% else %}
+      <p class="muted">予定されているイベントはありません</p>
+      {% endfor %}
+    </div>
+    <div>
+      <h3 class="teaser-head">全国の主要イベント</h3>
+      {% for e in events.major[:3] %}
+      <a class="teaser-line" href="{{ e.url }}" target="_blank" rel="noopener noreferrer">
+        <span class="t-date">{{ e.date_label }}</span><span class="t-name">{{ e.name }}</span>
+      </a>
+      {% else %}
+      <p class="muted">予定されているイベントはありません</p>
+      {% endfor %}
+    </div>
+    <a class="btn btn-block teaser-btn" href="{{ root }}events/index.html">&gt; イベント情報をすべて見る</a>
+  </div>
+</section>
+
+<section class="window feed-log">
+  <div class="window-bar">
+    <span class="dots"><i></i><i></i><i></i></span>
+    <span class="window-title">incoming_feed.log — 最新の受信ログ</span>
+  </div>
+  <div class="window-body">
+    {% for item in latest %}
+    <a class="log-line ch-{{ item.channel }}" href="{{ root }}items/{{ item.id }}.html">
+      <span class="log-time">[{{ item.published|hhmm }}]</span>
+      <span class="log-ch">{{ channels[item.channel].title }}</span>
+      <span class="log-src">{{ item.source }}</span>
+      <span class="log-title">{{ item.title_ja or item.title_orig }}</span>
+    </a>
+    {% else %}
+    <p class="muted">&gt; 受信待機中…</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (() => {
+    const typed = document.getElementById("typed");
+    const text = typed.dataset.text;
+    let i = 0;
+    const tick = () => { typed.textContent = text.slice(0, ++i); if (i < text.length) setTimeout(tick, 55); };
+    setTimeout(tick, 300);
+
+    // 動きを抑える設定の端末ではアニメーションを出さない
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const canvas = document.getElementById("matrix");
+    const ctx = canvas.getContext("2d");
+    const chars = "アイウエオカキクケコサシスセソタチツテトナニヌネノ0123456789ABCDEF<>/{}$#";
+    const size = 16;
+    let drops = [];
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      drops = Array.from({ length: Math.ceil(canvas.width / size) }, () => Math.random() * -60);
+    };
+    resize();
+    window.addEventListener("resize", resize);
+    setInterval(() => {
+      ctx.fillStyle = "rgba(3, 8, 6, 0.12)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.font = `${size}px monospace`;
+      drops.forEach((y, x) => {
+        ctx.fillStyle = Math.random() > 0.975 ? "#d9ffe9" : "#00ff9c";
+        ctx.fillText(chars[Math.floor(Math.random() * chars.length)], x * size, y * size);
+        drops[x] = y * size > canvas.height && Math.random() > 0.975 ? 0 : y + 1;
+      });
+    }, 60);
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}{{ item.title_ja or item.title_orig }} — SEC//INTEL{% endblock %}
+{% block content %}
+<a class="back" href="{{ root }}{{ channel }}/index.html" onclick="if (history.length > 1 && document.referrer.startsWith(location.origin)) { history.back(); return false; }">&lt;&lt; cd ../{{ channel }} — {{ ch.title }}ランキングに戻る</a>
+
+<article class="detail">
+  <header class="window detail-head lvl-{{ item.level_class }}">
+    <div class="window-bar">
+      <span class="dots"><i></i><i></i><i></i></span>
+      <span class="window-title">{{ ch.code|lower }}/item_{{ item.id }}.dat</span>
+    </div>
+    <div class="window-body">
+      <div class="tags">
+        <span class="badge {{ item.level_class }}">{{ ch.score_label }} {{ item.level }}</span>
+        <span class="category">{{ item.category }}</span>
+        {% if item.kind == 'kev' %}<span class="category kev">悪用確認済み</span>{% endif %}
+      </div>
+      <h1>{{ item.title_ja or item.title_orig }}</h1>
+      {% if item.title_ja and item.title_ja != item.title_orig %}
+      <p class="orig-title">原題: {{ item.title_orig }}</p>
+      {% endif %}
+      <div class="detail-meta">
+        <span>&gt; 情報源: {{ item.source }}</span>
+        <span>&gt; 公開: {{ item.published|jst }}（<time class="ago" datetime="{{ item.published.isoformat() }}">{{ item.published|ago }}</time>）</span>
+      </div>
+      <div class="detail-score">
+        <span class="score-label">{{ ch.score_label }}</span>
+        <span class="score-num big">{{ item.score }}</span><span class="of">/ 100</span>
+        <span class="bar wide"><i style="width: {{ item.score }}%"></i></span>
+      </div>
+      <a class="btn" href="{{ item.url }}" target="_blank" rel="noopener noreferrer">
+        {% if item.kind == 'kev' %}&gt; NVD（脆弱性データベース）で見る ↗{% else %}&gt; 元記事を開く ↗{% endif %}
+      </a>
+    </div>
+  </header>
+
+  {% if item.summary_ja or item.summary_orig %}
+  <section class="window">
+    <div class="window-bar"><span class="dots"><i></i><i></i><i></i></span><span class="window-title">summary.txt — 概要</span></div>
+    <div class="window-body"><p class="prewrap">{{ item.summary_ja or item.summary_orig }}</p></div>
+  </section>
+  {% endif %}
+
+  {% if item.kind == 'kev' %}
+  <section class="window">
+    <div class="window-bar"><span class="dots"><i></i><i></i><i></i></span><span class="window-title">kev_record.json — 脆弱性の情報（CISA KEV）</span></div>
+    <div class="window-body">
+      <dl class="facts">
+        <dt>CVE 番号</dt><dd>{{ item.extra.cve }}</dd>
+        <dt>ベンダー</dt><dd>{{ item.extra.vendor }}</dd>
+        <dt>製品</dt><dd>{{ item.extra.product }}</dd>
+        <dt>米政府機関の対応期限</dt><dd>{{ item.extra.due_date or '—' }}</dd>
+        <dt>ランサムウェアでの悪用</dt><dd>{{ '判明している' if item.extra.ransomware == 'Known' else '不明' }}</dd>
+        {% if item.extra.cwes %}<dt>弱点の種類（CWE）</dt><dd>{{ item.extra.cwes|join(', ') }}</dd>{% endif %}
+      </dl>
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="window">
+    <div class="window-bar"><span class="dots"><i></i><i></i><i></i></span><span class="window-title">score_breakdown.log — なぜこの順位？（{{ ch.score_label }}の内訳）</span></div>
+    <div class="window-body">
+      <table class="breakdown">
+        <tbody>
+          {% for r in item.reasons %}
+          <tr><td><span class="plus">[+]</span> {{ r.label }}</td><td class="pts">+{{ r.points }}</td></tr>
+          {% else %}
+          <tr><td><span class="plus">[-]</span> 加点対象のキーワードは見つかりませんでした</td><td class="pts">0</td></tr>
+          {% endfor %}
+          <tr class="subtotal"><td>基本スコア</td><td class="pts">{{ item.base_score }}</td></tr>
+          <tr><td><span class="plus">[×]</span> 新しさによる補正（{{ item.recency_label }}）</td><td class="pts">×{{ item.recency_factor }}</td></tr>
+          {% if item.coverage_bonus %}
+          <tr><td><span class="plus">[+]</span> 同じ CVE を {{ item.coverage }} つの情報源が報道</td><td class="pts">+{{ item.coverage_bonus }}</td></tr>
+          {% endif %}
+          <tr class="total"><td>最終スコア（最大 100）</td><td class="pts">{{ item.score }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  {% if item.cves %}
+  <section class="window">
+    <div class="window-bar"><span class="dots"><i></i><i></i><i></i></span><span class="window-title">cve_refs.txt — 関連する CVE（脆弱性の識別番号）</span></div>
+    <div class="window-body">
+      <ul class="cve-list">
+        {% for cve in item.cves %}
+        <li><a href="https://nvd.nist.gov/vuln/detail/{{ cve }}" target="_blank" rel="noopener noreferrer">{{ cve }} ↗</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if item.kind != 'kev' %}
+  <section class="window">
+    <div class="window-bar"><span class="dots"><i></i><i></i><i></i></span><span class="window-title">article_ja.md — 記事本文（日本語訳）</span></div>
+    <div class="window-body article-body">
+      {% for p in paragraphs %}
+      <p>{{ p }}</p>
+      {% else %}
+      <p class="muted">&gt; {% if item.body_ja is none %}本文の日本語訳は、ランキング上位の記事のみ用意しています。{% else %}本文を自動取得できませんでした。{% endif %}「元記事を開く」から原文をご覧ください。</p>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+</article>
+{% endblock %}
