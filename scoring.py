@@ -11,6 +11,7 @@ _POPULAR_RE = re.compile(rf"\b(?:{config.POPULAR_PRODUCTS})\b", re.IGNORECASE)
 _RULES = {
     name: {
         "keywords": [(re.compile(p, re.IGNORECASE), pts, label) for p, pts, label in ch["keyword_rules"]],
+        "penalties": [(re.compile(p, re.IGNORECASE), pts, label) for p, pts, label in ch.get("penalty_rules", [])],
         "categories": [(label, re.compile(p, re.IGNORECASE)) for label, p in ch["categories"]],
     }
     for name, ch in config.CHANNELS.items()
@@ -28,7 +29,7 @@ def categorize(text, channel):
     return "その他"
 
 
-def base_score(text, channel, source_name="", source_bonus=0, kev=None):
+def base_score(text, channel, source_name="", source_bonus=0, kev=None, title="", demote_tag=None):
     ch = config.CHANNELS[channel]
     reasons = []
 
@@ -63,7 +64,13 @@ def base_score(text, channel, source_name="", source_bonus=0, kev=None):
     if source_bonus:
         reasons.append({"label": ch["bonus_label"].format(source=source_name), "points": source_bonus})
 
-    return min(100, sum(r["points"] for r in reasons)), reasons
+    for pattern, points, label in _RULES[channel]["penalties"]:
+        if pattern.search(title):
+            reasons.append({"label": label, "points": points})
+    if demote_tag:
+        reasons.append({"label": f"製品の宣伝・資料案内（{source_name} の「{demote_tag}」分類）", "points": config.DEMOTE_TAG_POINTS})
+
+    return max(0, min(100, sum(r["points"] for r in reasons))), reasons
 
 
 def cve_source_counts(items):

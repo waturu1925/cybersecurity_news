@@ -25,6 +25,7 @@ POPULAR_PRODUCTS = (
     r"WordPress|Atlassian|Confluence|Jenkins|SonicWall|Juniper|F5"
 )
 POPULAR_PRODUCTS_POINTS = 8
+DEMOTE_TAG_POINTS = -15
 
 # 各ページ（チャンネル）の設定。feeds の bonus は情報源そのものの信頼度による加点
 CHANNELS = {
@@ -107,7 +108,9 @@ CHANNELS = {
             {"name": "Microsoft Security Blog", "url": "https://www.microsoft.com/en-us/security/blog/feed/", "bonus": 0},
             {"name": "Cloudflare Blog", "url": "https://blog.cloudflare.com/tag/security/rss/", "bonus": 0},
             {"name": "SANS ISC", "url": "https://isc.sans.edu/rssfeed_full.xml", "bonus": 0},
-            {"name": "Help Net Security", "url": "https://www.helpnetsecurity.com/feed/", "bonus": 0},
+            # 製品の宣伝記事は "Industry news"、資料ダウンロードの案内は "Whitepapers and webinars" に分類されている
+            {"name": "Help Net Security", "url": "https://www.helpnetsecurity.com/feed/", "bonus": 0,
+             "demote_tags": ["Industry news", "Whitepapers and webinars"]},
             {"name": "Schneier on Security", "url": "https://www.schneier.com/feed/atom/", "bonus": 0},
             {"name": "Kali Linux", "url": "https://www.kali.org/rss.xml", "bonus": 0},
             {"name": "LAC WATCH", "url": "https://www.lac.co.jp/lacwatch/feed.xml", "bonus": 0},
@@ -123,6 +126,7 @@ CHANNELS = {
             (r"research|researchers|whitepaper|\bpaper\b|study|研究|論文|調査", 8, "研究・調査結果"),
             (r"post[- ]quantum|cryptograph|encryption|\bTLS\b|passkey|FIDO|WebAuthn|暗号|パスキー", 8, "暗号・認証技術"),
             (r"detection|threat hunting|YARA|\bSigma\b|SIEM|\bEDR\b|\bXDR\b|\bSOC\b|検知|ハンティング", 8, "検知・防御技術"),
+            (r"request smuggling|desync|\bXSS\b|cross-site|\bSSRF\b|\bCSRF\b|deserializ|prototype pollution|cache poisoning|SQL injection|クロスサイト|インジェクション", 10, "Web アプリへの攻撃手法"),
             (r"kernel|memory safety|\bRust\b|hypervisor|firmware|UEFI|race condition|カーネル|メモリ安全|ファームウェア", 8, "低レイヤー・システムセキュリティ"),
             (r"malware|ransomware|backdoor|loader|rootkit|implant|stealer|\bC2\b|command-and-control|BYOVD|マルウェア|ランサムウェア|バックドア", 8, "マルウェアの技術解析"),
             (r"threat actor|campaign|\bAPT\s?\d*\b|\bUAT-\d+|state-sponsored|攻撃グループ|攻撃者グループ|キャンペーン", 8, "攻撃グループ・キャンペーンの分析"),
@@ -130,6 +134,10 @@ CHANNELS = {
             (r"zero[- ]?day|0-day|CVE-\d|vulnerabilit|ゼロデイ|脆弱性", 6, "脆弱性の研究・分析"),
         ],
         "keyword_cap": 60,
+        # タイトルで判定する減点ルール。製品宣伝はタイトルの言い回しが多様で拾えないため、フィードの demote_tags で判定する
+        "penalty_rules": [
+            (r"\bjobs? available|\bhiring\b|求人|採用情報", -15, "求人情報"),
+        ],
         "categories": [
             ("AIセキュリティ", r"\bAI\b|\bLLM|machine learning|agentic|prompt injection|生成AI|機械学習"),
             ("マルウェア解析", r"malware|backdoor|loader|trojan|\bC2\b|ransomware|マルウェア|バックドア|ランサムウェア"),

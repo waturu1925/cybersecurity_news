@@ -47,6 +47,11 @@ def fetch_feed(feed, channel, cutoff, now):
         published = min(_entry_time(entry) or now, now)
         if published < cutoff:
             continue
+        extra = {}
+        tags = {t.get("term") for t in entry.get("tags", [])}
+        demoted = [t for t in feed.get("demote_tags", []) if t in tags]
+        if demoted:
+            extra["demote_tag"] = demoted[0]
         items.append({
             "url": url,
             "channel": channel,
@@ -55,7 +60,7 @@ def fetch_feed(feed, channel, cutoff, now):
             "title_orig": title,
             "summary_orig": _entry_summary(entry),
             "published": published,
-            "extra": {},
+            "extra": extra,
         })
     return items
 
@@ -95,7 +100,8 @@ def _score(item):
     text = f"{item['title_orig']} {item['summary_orig']}"
     kev = item["extra"] if item["kind"] == "kev" else None
     item["base_score"], item["reasons"] = scoring.base_score(
-        text, item["channel"], item["source"], _SOURCE_BONUS.get(item["source"], 0), kev
+        text, item["channel"], item["source"], _SOURCE_BONUS.get(item["source"], 0), kev, item["title_orig"],
+        item["extra"].get("demote_tag"),
     )
     if item["kind"] == "kev":
         item["category"] = "脆弱性"

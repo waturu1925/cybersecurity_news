@@ -63,7 +63,11 @@
       <table class="breakdown">
         <tbody>
           {% for r in item.reasons %}
+          {% if r.points < 0 %}
+          <tr class="minus"><td><span class="plus">[-]</span> {{ r.label }}</td><td class="pts">{{ r.points }}</td></tr>
+          {% else %}
           <tr><td><span class="plus">[+]</span> {{ r.label }}</td><td class="pts">+{{ r.points }}</td></tr>
+          {% endif %}
           {% else %}
           <tr><td><span class="plus">[-]</span> 加点対象のキーワードは見つかりませんでした</td><td class="pts">0</td></tr>
           {% endfor %}
