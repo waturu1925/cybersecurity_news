@@ -92,13 +92,15 @@ body::after {
 a { color: var(--accent); }
 ::selection { background: rgba(var(--accent-rgb), 0.35); color: var(--text-strong); }
 
-.container { position: relative; z-index: 1; max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+.container { position: relative; z-index: 1; max-width: 1080px; margin: 0 auto; padding: 0 max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left)); }
 
 /* ---------- ヘッダー ---------- */
 .site-header {
   position: sticky;
   top: 0;
   z-index: 50;
+  /* ホーム画面から開くとステータスバー（black-translucent）の下まで描画されるため、時刻などの領域を空ける */
+  padding-top: env(safe-area-inset-top);
   background: rgba(3, 8, 6, 0.82);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--line);
@@ -152,6 +154,7 @@ a { color: var(--accent); }
   bottom: 0;
   z-index: 80;
   width: min(340px, 88vw);
+  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) env(safe-area-inset-left);
   display: flex;
   flex-direction: column;
   background: rgba(4, 12, 9, 0.97);
@@ -484,7 +487,7 @@ main.container { padding-top: 26px; padding-bottom: 56px; }
 .loading { color: var(--muted); }
 
 /* ---------- フッター ---------- */
-.site-footer { position: relative; z-index: 1; border-top: 1px solid var(--line); padding: 16px 0 24px; font-size: .75rem; color: var(--dim); }
+.site-footer { position: relative; z-index: 1; border-top: 1px solid var(--line); padding: 16px 0 calc(24px + env(safe-area-inset-bottom)); font-size: .75rem; color: var(--dim); }
 .site-footer .container { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
 .cursor-line .cursor { width: .5em; height: .95em; }
 
