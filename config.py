@@ -87,6 +87,8 @@ CHANNELS = {
         "keep_days": 90,
         "periods": {7: "1週間", 30: "30日間", 90: "90日間"},
         "default_period": 30,
+        # 投稿数の多い情報源（Help Net Security など）が上位を埋めないよう、ランキングに出す件数を1情報源あたりこの数までにする
+        "source_cap": 10,
         "include_kev": False,
         "product_bonus": False,
         "cvss_bonus": False,

@@ -23,7 +23,7 @@
   {% for _, label, css in ch.levels %}
   <span class="chip {{ css }}">{{ label }} <b>{{ counts[css] }}</b></span>
   {% endfor %}
-  <span class="hint">全 {{ total }} 件中 上位 {{ items|length }} 件を表示 ・ タップで詳細</span>
+  <span class="hint">全 {{ total }} 件中 上位 {{ items|length }} 件を表示{% if ch.source_cap %}（1つの情報源からは最大 {{ ch.source_cap }} 件）{% endif %} ・ タップで詳細</span>
 </div>
 
 <ol class="ranking">

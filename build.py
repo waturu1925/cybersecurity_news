@@ -57,6 +57,21 @@ def ranked(channel, days):
     return sorted(evaluated(channel, days), key=lambda i: (i["score"], i["published"]), reverse=True)
 
 
+def top_items(channel, items):
+    cap = config.CHANNELS[channel].get("source_cap")
+    if not cap:
+        return items[:config.RANKING_LIMIT]
+    shown, per_source = [], {}
+    for item in items:
+        if per_source.get(item["source"], 0) >= cap:
+            continue
+        per_source[item["source"]] = per_source.get(item["source"], 0) + 1
+        shown.append(item)
+        if len(shown) == config.RANKING_LIMIT:
+            break
+    return shown
+
+
 def level_counts(channel, items):
     counts = {css: 0 for _, _, css in config.CHANNELS[channel]["levels"]}
     for item in items:
@@ -87,7 +102,7 @@ def build(do_collect):
     rankings = {name: ranked(name, ch["default_period"]) for name, ch in config.CHANNELS.items()}
     if do_collect:
         for name, items in rankings.items():
-            collector.prefetch_bodies(items[:config.BODY_PREFETCH])
+            collector.prefetch_bodies(top_items(name, items)[:config.BODY_PREFETCH])
 
     last = db.get_meta("last_collected")
     repo = os.environ.get("GITHUB_REPOSITORY")
@@ -109,7 +124,7 @@ def build(do_collect):
 
     summaries = {}
     for name, items in rankings.items():
-        summaries[name] = {"top": items[:3], "counts": level_counts(name, items), "total": len(items)}
+        summaries[name] = {"top": top_items(name, items)[:3], "counts": level_counts(name, items), "total": len(items)}
     latest = sorted(db.items_since(NOW - timedelta(days=2)), key=lambda i: i["published"], reverse=True)[:14]
     stats = {
         "tracked": sum(db.count(name) for name in config.CHANNELS),
@@ -123,7 +138,7 @@ def build(do_collect):
     for name, ch in config.CHANNELS.items():
         for days in ch["periods"]:
             items = ranked(name, days)
-            ctx = dict(channel=name, ch=ch, items=items[:config.RANKING_LIMIT], total=len(items),
+            ctx = dict(channel=name, ch=ch, items=top_items(name, items), total=len(items),
                        counts=level_counts(name, items), days=days, theme=name, active=name)
             site.render("ranking.html", f"{name}/{days}d.html", **ctx)
             if days == ch["default_period"]:

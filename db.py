@@ -93,10 +93,11 @@ def update_score(item):
         )
 
 
-def untranslated():
+def translation_candidates():
     with closing(_connect()) as conn:
         return [dict(r) for r in conn.execute(
-            "SELECT id, title_orig, summary_orig FROM items WHERE title_ja IS NULL ORDER BY published DESC"
+            "SELECT id, title_orig, summary_orig, title_ja FROM items"
+            " WHERE title_ja IS NULL OR title_ja = title_orig ORDER BY published DESC"
         )]
 
 

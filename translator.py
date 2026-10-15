@@ -70,5 +70,9 @@ def translate_pair(title, summary):
     combined = to_japanese(f"{title}\n\n{summary}")
     if "\n\n" in combined:
         title_ja, summary_ja = combined.split("\n\n", 1)
-        return title_ja.strip(), summary_ja.strip()
+        title_ja = title_ja.strip()
+        # まとめて翻訳するとタイトル行だけ原文のまま返ることがあるため、単独で訳し直す
+        if title_ja == title.strip():
+            title_ja = to_japanese(title)
+        return title_ja, summary_ja.strip()
     return to_japanese(title), to_japanese(summary)

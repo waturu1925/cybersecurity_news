@@ -111,8 +111,15 @@ def rescore_all():
         db.update_score(item)
 
 
+def _needs_translation(row):
+    if row["title_ja"] is None:
+        return True
+    # 英語タイトルが原文のまま保存されている場合（翻訳側の一時的な不調）も訳し直す
+    return row["title_ja"] == row["title_orig"] and not translator.is_japanese(row["title_orig"])
+
+
 def _translate_pending():
-    pending = db.untranslated()
+    pending = [row for row in db.translation_candidates() if _needs_translation(row)]
     if not pending:
         return
 
