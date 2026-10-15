@@ -139,7 +139,8 @@ CHANNELS = {
             ("クラウド・インフラ", r"cloud|Kubernetes|container|\bAWS\b|Azure|network|DNS|クラウド|ネットワーク"),
             ("ツール・OSS", r"open[- ]source|GitHub|\btools?\b|toolkit|framework|release|オープンソース|ツール"),
         ],
-        "levels": [(40, "必読", "critical"), (26, "注目", "high"), (14, "標準", "medium"), (0, "参考", "low")],
+        # 技術記事は30日単位で見るため新しさ補正で点が伸びにくい。必読≒上位2〜3%、注目≒上位10%になるよう設定
+        "levels": [(32, "必読", "critical"), (24, "注目", "high"), (14, "標準", "medium"), (0, "参考", "low")],
     },
     "gadget": {
         "title": "ガジェットニュース",
