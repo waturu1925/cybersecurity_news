@@ -8,7 +8,7 @@
 - DB（`data/news.db`）は Actions のキャッシュで実行間を引き継ぐ。記事 ID はキャッシュが消えると振り直しになる
 - チャンネル: `news` / `tech` / `gadget`。情報源・採点ルール・レベル名・期間は `config.py` の `CHANNELS` に集約
 - イベント: `curated_events.py`（手動管理の主要イベント）＋ `events.py`（Doorkeeper 自動取得、`CONNPASS_API_KEY` があれば connpass も）
-- LINE 通知: `notify_line.py`（Messaging API の push。毎朝 8:00 JST = cron `0 23 * * *`）。シークレット未設定時は内容を表示するだけ
+- LINE 通知: `notify_line.py`（Messaging API の push。毎朝 5:00 JST = cron `0 20 * * *`）。シークレット未設定時は内容を表示するだけ
 - 翻訳: Google 翻訳の非公式エンドポイント `clients5.google.com`（`translate.google.com/m` は CAPTCHA でブロックされる）
 - 本文翻訳は静的サイトのため事前に行う（各ランキング上位 `BODY_PREFETCH` 件）。`body_ja` は NULL=未取得、空文字=取得失敗
 

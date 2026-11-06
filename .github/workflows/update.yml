@@ -3,7 +3,7 @@ name: update
 on:
   schedule:
     - cron: "0 */3 * * *"   # 3時間ごとに収集してサイトを更新
-    - cron: "0 23 * * *"    # 毎朝 8:00（日本時間）に更新＋LINE 通知
+    - cron: "0 20 * * *"    # 毎朝 5:00（日本時間）に更新＋LINE 通知。GitHub 側の混雑で20分ほど遅れることが多い
   workflow_dispatch:
     inputs:
       notify:
@@ -68,7 +68,7 @@ jobs:
         uses: actions/deploy-pages@v4
 
       - name: Notify LINE
-        if: github.event.schedule == '0 23 * * *' || inputs.notify
+        if: github.event.schedule == '0 20 * * *' || inputs.notify
         env:
           LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
           LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
@@ -77,7 +77,7 @@ jobs:
 
       # 公開リポジトリは60日間更新が無いと定期実行が止まるため、毎月1日に空コミットして防ぐ
       - name: Keep schedule alive
-        if: github.event.schedule == '0 23 * * *'
+        if: github.event.schedule == '0 20 * * *'
         run: |
           if [ "$(TZ=Asia/Tokyo date +%d)" = "01" ]; then
             git config user.name "github-actions[bot]"
